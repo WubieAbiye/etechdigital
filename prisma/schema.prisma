@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  posts     Content[]
+}
+
+model Content {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  excerpt     String
+  body        String
+  type        ContentType  @default(BLOG)
+  status      ContentStatus @default(PUBLISHED)
+  author      String      @default("E Tech Team")
+  readTime    String      @default("5 min read")
+  image       String      @default("/placeholder.svg")
+  externalUrl String?
+  tags        String      @default("")
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([type, status])
+  @@index([categoryId])
+}
+
+enum ContentType {
+  BLOG
+  NEWS
+  TUTORIAL
+  ANNOUNCEMENT
+  LINK
+  INFO
+  TIP
+  DV_LOTTERY
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  status    MessageStatus @default(NEW)
+  createdAt DateTime @default(now())
+}
+
+enum MessageStatus {
+  NEW
+  READ
+  ARCHIVED
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
