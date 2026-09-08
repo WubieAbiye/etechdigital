@@ -24,6 +24,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "E Tech Digital Academy", statusBarStyle: "default" },
   generator: "Wubie A",
 }
 

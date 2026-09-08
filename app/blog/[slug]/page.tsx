@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { toSlug } from "@/lib/blog-data"
-import { db } from "@/lib/db"
+import { findPublishedContentBySlug } from "@/lib/db"
 import { contentTags, toBlogPost } from "@/lib/content"
 import { Clock, User, Calendar, ArrowLeft, Share2, Bookmark, Facebook, Twitter, Linkedin } from "lucide-react"
 
@@ -16,7 +16,7 @@ interface BlogPostPageProps {
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params
-  const content = await db.content.findFirst({ where: { slug, status: "PUBLISHED" }, include: { category: true } })
+  const content = findPublishedContentBySlug(slug)
 
   if (!content) {
     notFound()

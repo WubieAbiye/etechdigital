@@ -1,30 +1,18 @@
-import { ContentType, Prisma } from "@prisma/client"
-import { db } from "@/lib/db"
-
-export const publicContentWhere: Prisma.ContentWhereInput = { status: "PUBLISHED" }
+import { ContentType, getPublishedCategories as getCategories, getPublishedContent as getContent } from "@/lib/db"
 
 export async function getPublishedContent(type?: ContentType) {
-  if (!process.env.DATABASE_URL) return []
-
-  return db.content.findMany({ where: { ...publicContentWhere, ...(type ? { type } : {}) }, include: { category: true }, orderBy: { publishedAt: "desc" } })
+  return getContent(type)
 }
 
 export async function getPublishedCategories() {
-  if (!process.env.DATABASE_URL) return []
-
-  return db.category.findMany({
-    orderBy: { name: "asc" },
-    include: { _count: { select: { posts: { where: { status: "PUBLISHED" } } } } },
-  })
+  return getCategories().map((category) => ({ ...category, _count: { posts: category.postCount || 0 } }))
 }
 
 export function contentTags(tags: string) {
   return tags.split(",").map((tag) => tag.trim()).filter(Boolean)
 }
 
-type ContentWithCategory = Prisma.ContentGetPayload<{ include: { category: true } }>
-
-export function toBlogPost(content: ContentWithCategory) {
+export function toBlogPost(content: Awaited<ReturnType<typeof getPublishedContent>>[number]) {
   return {
     id: content.id,
     title: content.title,

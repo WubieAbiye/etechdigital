@@ -3,7 +3,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { BlogCard } from "@/components/blog-card"
 import { Sidebar } from "@/components/sidebar"
-import { db } from "@/lib/db"
+import { findCategoryBySlug, getPublishedContentForCategory } from "@/lib/db"
 import { toBlogPost } from "@/lib/content"
 
 interface CategoryPageProps {
@@ -12,13 +12,13 @@ interface CategoryPageProps {
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params
-  const category = await db.category.findUnique({ where: { slug }, include: { _count: { select: { posts: { where: { status: "PUBLISHED" } } } } } })
+  const category = findCategoryBySlug(slug)
 
   if (!category) {
     notFound()
   }
 
-  const categoryPosts = (await db.content.findMany({ where: { categoryId: category.id, status: "PUBLISHED" }, include: { category: true }, orderBy: { publishedAt: "desc" } })).map(toBlogPost)
+  const categoryPosts = getPublishedContentForCategory(category.id).map(toBlogPost)
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -30,7 +30,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{category.name}</h1>
             <p className="text-muted-foreground">
               Browse all articles in the {category.name} category.
-              {" "}{category._count.posts} {category._count.posts === 1 ? "article" : "articles"} available.
+              {" "}{category.postCount || 0} {(category.postCount || 0) === 1 ? "article" : "articles"} available.
             </p>
           </div>
 

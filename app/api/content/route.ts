@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { db } from "@/lib/db"
+import { createContent, getAllContent, getPublishedContent } from "@/lib/db"
 import { isAdmin } from "@/lib/auth"
-import { toSlug } from "@/lib/blog-data"
 
 const allowedTypes = ["BLOG", "NEWS", "TUTORIAL", "ANNOUNCEMENT", "LINK", "INFO", "TIP", "DV_LOTTERY"] as const
 
@@ -12,11 +11,7 @@ export async function GET(request: Request) {
   const adminRequest = url.searchParams.get("admin") === "true"
   const admin = adminRequest && (await isAdmin())
 
-  const posts = await db.content.findMany({
-    where: { ...(admin ? {} : { status: "PUBLISHED" }), ...(type ? { type: type as any } : {}) },
-    include: { category: true },
-    orderBy: { publishedAt: "desc" },
-  })
+  const posts = admin ? getAllContent() : getPublishedContent(type)
 
   return NextResponse.json(posts)
 }
@@ -35,30 +30,7 @@ export async function POST(request: Request) {
   const excerpt = input.excerpt || input.body || ""
   const body = input.body || ""
 
-  const category = await db.category.upsert({
-    where: { slug: toSlug(input.category) },
-    update: { name: input.category },
-    create: { name: input.category, slug: toSlug(input.category) },
-  })
-
-  const post = await db.content.create({
-    data: {
-      title: input.title.trim(),
-      slug: toSlug(input.slug || input.title),
-      excerpt: typeof excerpt === "string" ? excerpt : "",
-      body: typeof body === "string" ? body : "",
-      type,
-      status,
-      author: typeof input.author === "string" ? input.author : "",
-      readTime: typeof input.readTime === "string" ? input.readTime : "",
-      image: typeof input.image === "string" ? input.image : "",
-      externalUrl: typeof input.externalUrl === "string" && input.externalUrl ? input.externalUrl : null,
-      tags: typeof input.tags === "string" ? input.tags : "",
-      categoryId: category.id,
-      publishedAt: status === "DRAFT" ? null : new Date(),
-    },
-    include: { category: true },
-  })
+  const post = createContent({ ...input, type, status, excerpt, body })
 
   return NextResponse.json(post, { status: 201 })
 }
