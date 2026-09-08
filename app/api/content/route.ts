@@ -9,9 +9,11 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const rawType = url.searchParams.get("type")
   const type = rawType && allowedTypes.includes(rawType as (typeof allowedTypes)[number]) ? (rawType as (typeof allowedTypes)[number]) : undefined
+  const adminRequest = url.searchParams.get("admin") === "true"
+  const admin = adminRequest && (await isAdmin())
 
   const posts = await db.content.findMany({
-    where: { status: "PUBLISHED", ...(type ? { type: type as any } : {}) },
+    where: { ...(admin ? {} : { status: "PUBLISHED" }), ...(type ? { type: type as any } : {}) },
     include: { category: true },
     orderBy: { publishedAt: "desc" },
   })
@@ -24,8 +26,9 @@ export async function POST(request: Request) {
 
   const input = await request.json()
   const type = allowedTypes.includes(input.type) ? input.type : "BLOG"
+  const status = input.status === "DRAFT" ? "DRAFT" : "PUBLISHED"
 
-  if (!input.title || !input.category) {
+  if (typeof input.title !== "string" || !input.title.trim() || typeof input.category !== "string" || !input.category.trim()) {
     return NextResponse.json({ error: "Title and category are required" }, { status: 400 })
   }
 
@@ -40,19 +43,19 @@ export async function POST(request: Request) {
 
   const post = await db.content.create({
     data: {
-      title: input.title,
+      title: input.title.trim(),
       slug: toSlug(input.slug || input.title),
-      excerpt,
-      body,
+      excerpt: typeof excerpt === "string" ? excerpt : "",
+      body: typeof body === "string" ? body : "",
       type,
-      status: input.status || "PUBLISHED",
-      author: input.author || "E Tech Team",
-      readTime: input.readTime || "5 min read",
-      image: input.image || "/placeholder.svg",
-      externalUrl: input.externalUrl || null,
-      tags: input.tags || "",
+      status,
+      author: typeof input.author === "string" ? input.author : "",
+      readTime: typeof input.readTime === "string" ? input.readTime : "",
+      image: typeof input.image === "string" ? input.image : "",
+      externalUrl: typeof input.externalUrl === "string" && input.externalUrl ? input.externalUrl : null,
+      tags: typeof input.tags === "string" ? input.tags : "",
       categoryId: category.id,
-      publishedAt: input.status === "DRAFT" ? null : new Date(),
+      publishedAt: status === "DRAFT" ? null : new Date(),
     },
     include: { category: true },
   })

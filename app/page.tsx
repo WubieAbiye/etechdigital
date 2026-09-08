@@ -4,15 +4,14 @@ import { HeroSection } from "@/components/hero-section"
 import { BlogCard } from "@/components/blog-card"
 import { CategoryBadge } from "@/components/category-badge"
 import { Sidebar } from "@/components/sidebar"
-import { db } from "@/lib/db"
-import { toBlogPost } from "@/lib/content"
+import { getPublishedCategories, getPublishedContent, toBlogPost } from "@/lib/content"
 
 export default async function HomePage() {
-  const content = await db.content.findMany({ where: { status: "PUBLISHED" }, include: { category: true }, orderBy: { publishedAt: "desc" } })
+  const content = await getPublishedContent()
   const posts = content.map(toBlogPost)
   const featuredPost = posts[0]
   const recentPosts = posts.slice(1)
-  const categories = await db.category.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { posts: { where: { status: "PUBLISHED" } } } } } })
+  const categories = await getPublishedCategories()
 
   return (
     <div className="min-h-screen flex flex-col">

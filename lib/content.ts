@@ -4,7 +4,18 @@ import { db } from "@/lib/db"
 export const publicContentWhere: Prisma.ContentWhereInput = { status: "PUBLISHED" }
 
 export async function getPublishedContent(type?: ContentType) {
+  if (!process.env.DATABASE_URL) return []
+
   return db.content.findMany({ where: { ...publicContentWhere, ...(type ? { type } : {}) }, include: { category: true }, orderBy: { publishedAt: "desc" } })
+}
+
+export async function getPublishedCategories() {
+  if (!process.env.DATABASE_URL) return []
+
+  return db.category.findMany({
+    orderBy: { name: "asc" },
+    include: { _count: { select: { posts: { where: { status: "PUBLISHED" } } } } },
+  })
 }
 
 export function contentTags(tags: string) {
