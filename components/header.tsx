@@ -66,6 +66,9 @@ export function Header() {
             <Button asChild className="hidden sm:flex">
               <Link href="/subscribe">Subscribe</Link>
             </Button>
+            <Link href="/admin" className="hidden text-sm font-medium text-muted-foreground hover:text-primary transition-colors sm:block">
+              Admin login
+            </Link>
 
             {/* Mobile menu button */}
             <Button
@@ -128,6 +131,13 @@ export function Header() {
                   <Link href="/subscribe">Subscribe</Link>
                 </Button>
               </div>
+              <Link
+                href="/admin"
+                className="px-2 py-2 text-sm font-medium text-muted-foreground hover:text-primary"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Admin login
+              </Link>
             </nav>
           </div>
         )}

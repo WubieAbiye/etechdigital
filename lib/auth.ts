@@ -2,7 +2,11 @@ import { cookies } from "next/headers"
 import { SignJWT, jwtVerify } from "jose"
 
 const cookieName = "etech-admin-session"
-const secret = new TextEncoder().encode(process.env.AUTH_SECRET || "development-only-secret")
+const configuredSecret = process.env.AUTH_SECRET
+if (process.env.NODE_ENV === "production" && !configuredSecret) {
+  throw new Error("AUTH_SECRET must be configured in production")
+}
+const secret = new TextEncoder().encode(configuredSecret || "development-only-secret")
 
 export async function createAdminSession(email: string) {
   const token = await new SignJWT({ email, role: "admin" })
@@ -12,7 +16,13 @@ export async function createAdminSession(email: string) {
     .sign(secret)
 
   const store = await cookies()
-  store.set(cookieName, token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 7 })
+  store.set(cookieName, token, {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  })
 }
 
 export async function isAdmin() {
