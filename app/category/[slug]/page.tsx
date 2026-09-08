@@ -30,7 +30,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{category.name}</h1>
             <p className="text-muted-foreground">
               Browse all articles in the {category.name} category.
-              {category._count.posts} articles available.
+              {" "}{category._count.posts} {category._count.posts === 1 ? "article" : "articles"} available.
             </p>
           </div>
 
